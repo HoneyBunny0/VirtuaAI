@@ -10,10 +10,10 @@ Option : Traduction des mots pour apprendre une nouvelle langue
 
 # Groupe
 
-paul.renoux
-paul.messeant
-matthieu.schlienger
-corentin.pion
+- paul.renoux
+- paul.messeant
+- matthieu.schlienger
+- corentin.pion
 
 # How to use
 

@@ -33,7 +33,6 @@ if __name__ == '__main__':
       npImg = np.squeeze(img)
 
       colors = get_colors(CLASSES)
-      st.text(len(CLASSES))
 
       for pred in preds:
         x1,y1 = int(pred[0]), int(pred[1])
@@ -51,8 +50,9 @@ if __name__ == '__main__':
 
         (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)
 
-        cv2.rectangle(npImg, (x1, y1 - 20), (x1 + w, y1), color, -1)
-        cv2.putText(npImg, label, (x1, y1 - 5),
+        offset = 0 if y1 > 20 else 20
+        cv2.rectangle(npImg, (x1, y1 - 20 + offset), (x1 + w, y1 + offset), color, -1)
+        cv2.putText(npImg, label, (x1, y1 - 5 + offset),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 1)
 
       st.image(npImg)
