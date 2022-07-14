@@ -1,4 +1,3 @@
-from matplotlib.pyplot import text
 import streamlit as st
 import torch
 from PIL import Image
@@ -6,7 +5,6 @@ import cv2
 import numpy as np
 from pages.settings import *
 from utilsPerso import load_image, get_colors, CLASSES
-from streamlit.components.v1 import html
 from streamlit_tags import st_tags
 
 def newImage():
@@ -47,7 +45,8 @@ if __name__ == '__main__':
         text='Press enter to add more',
         value=[],
         suggestions=labels,
-        key='1'
+        key='1',
+        maxtags=len(labels)
       )
 
       for pred in preds:
@@ -76,10 +75,16 @@ if __name__ == '__main__':
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 1)
     
       c.image(npImg)
+      info = st.empty()
 
       score = round(len(userInput) / len(labels) * 100)
-      textScore = score if (score != 100) else (str(score) + " 🎉")
-      st.markdown(f"<h3 style='text-align: center; color: green;'>{textScore}</h3>", unsafe_allow_html=True)
+      textScore = 'you have found {}% of the words, there are {} left'.format(score, len(labels) - len(userInput)) if (score != 100) else "🎉 Congratulations, you found everything ! 🎉"
+      #st.markdown(f"<h4 style='text-align: center; color: green;'>{textScore}</h4>", unsafe_allow_html=True)
       st.progress(len(userInput) / len(labels))
-      
+
+      if (score != 100):
+        info.warning(textScore)
+      else:
+        info.success(textScore)
+
       st.button(label="Next", on_click=newImage)
