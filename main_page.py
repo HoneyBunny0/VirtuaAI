@@ -28,7 +28,7 @@ if __name__ == '__main__':
       img = Image.open(image_file)
 
       # Get the model (pre trained for the moment)
-      model = torch.hub.load('ultralytics/yolov5', 'yolov5x', pretrained=True)
+      model = torch.hub.load('ultralytics/yolov5', 'yolov5x', pretrained=True, force_reload=True).autoshape()
 
       # Get predictions
       preds = model([img])
@@ -48,6 +48,8 @@ if __name__ == '__main__':
         key='1',
         maxtags=len(labels)
       )
+
+      userInput = [x for x in userInput if x in labels]
 
       for pred in preds:
         x1,y1 = int(pred[0]), int(pred[1])
