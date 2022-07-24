@@ -10,6 +10,36 @@ from streamlit_tags import st_tags
 def newImage():
   return
 
+
+def squarePred(preds, CLASSES, userInput, npImg):
+  for pred in preds:
+    x1,y1 = int(pred[0]), int(pred[1])
+    x2,y2 = int(pred[2]), int(pred[3])
+
+    label = CLASSES[int(pred[5])]
+
+    if (label not in userInput):
+      continue
+
+    color = colors[label]
+    
+    if getAccuracyVisible:
+      label += ":{0:.2f}%".format(pred[4])
+
+    cv2.rectangle(npImg, (x1, y1), (x2, y2), color, 3)
+
+    text_color = (0,0,0) if (color[0]*0.299 + color[0]*0.587 + color[0]*0.114 > 186) else (255,255,25)
+
+    (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)
+
+    offset = 0 if y1 > 20 else 20
+    cv2.rectangle(npImg, (x1, y1 - 20 + offset), (x1 + w, y1 + offset), color, -1)
+    cv2.putText(npImg, label, (x1, y1 - 5 + offset),
+    cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 1)
+
+def revealPred(labels):
+  st.text(labels)
+
 if __name__ == '__main__':
     st.markdown("# VirtuaAI 🧠")
     st.sidebar.markdown("# Main page 🧠")
@@ -28,7 +58,7 @@ if __name__ == '__main__':
       img = Image.open(image_file)
 
       # Get the model (pre trained for the moment)
-      model = torch.hub.load('ultralytics/yolov5', 'yolov5x', pretrained=True, force_reload=True).autoshape()
+      model = torch.hub.load('ultralytics/yolov5', 'yolov5x', pretrained=True)
 
       # Get predictions
       preds = model([img])
@@ -38,50 +68,26 @@ if __name__ == '__main__':
 
       labels = list(set([CLASSES[int(preds[i][5])] for i in range(len(preds))]))
       colors = get_colors(CLASSES)
-      
+
       c = st.container()
 
       userInput = st_tags(label="## Describe the picture :",
         text='Press enter to add more',
         value=[],
-        suggestions=labels,
+        suggestions=CLASSES,
         key='1',
         maxtags=len(labels)
       )
 
       userInput = [x for x in userInput if x in labels]
 
-      for pred in preds:
-        x1,y1 = int(pred[0]), int(pred[1])
-        x2,y2 = int(pred[2]), int(pred[3])
-
-        label = CLASSES[int(pred[5])]
-
-        if (label not in userInput):
-          continue
-
-        color = colors[label]
-        
-        if getAccuracyVisible:
-          label += ":{0:.2f}%".format(pred[4])
-
-        cv2.rectangle(npImg, (x1, y1), (x2, y2), color, 3)
-
-        text_color = (0,0,0) if (color[0]*0.299 + color[0]*0.587 + color[0]*0.114 > 186) else (255,255,25)
-
-        (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)
-
-        offset = 0 if y1 > 20 else 20
-        cv2.rectangle(npImg, (x1, y1 - 20 + offset), (x1 + w, y1 + offset), color, -1)
-        cv2.putText(npImg, label, (x1, y1 - 5 + offset),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 1)
+      squarePred(preds, CLASSES, userInput, npImg)
     
-      c.image(npImg)
       info = st.empty()
 
       score = round(len(userInput) / len(labels) * 100)
       textScore = 'you have found {}% of the words, there are {} left'.format(score, len(labels) - len(userInput)) if (score != 100) else "🎉 Congratulations, you found everything ! 🎉"
-      #st.markdown(f"<h4 style='text-align: center; color: green;'>{textScore}</h4>", unsafe_allow_html=True)
+      
       st.progress(len(userInput) / len(labels))
 
       if (score != 100):
@@ -89,4 +95,11 @@ if __name__ == '__main__':
       else:
         info.success(textScore)
 
+      if st.button("Reveal"):
+        squarePred(preds, CLASSES, labels, npImg)
+        revealPred(labels)
+        
       st.button(label="Next", on_click=newImage)
+      
+      c.image(npImg)
+      
