@@ -3,13 +3,11 @@ import torch
 from PIL import Image
 import cv2
 import numpy as np
-from pages.settings import *
 from utilsPerso import load_image, get_colors, CLASSES
 from streamlit_tags import st_tags
 
 def newImage():
-  return
-
+  st.session_state['img_index'] += 1
 
 def squarePred(preds, CLASSES, userInput, npImg):
   for pred in preds:
@@ -23,8 +21,8 @@ def squarePred(preds, CLASSES, userInput, npImg):
 
     color = colors[label]
     
-    if getAccuracyVisible:
-      label += ":{0:.2f}%".format(pred[4])
+    if st.session_state['accuracy']:
+      label += ":{}%".format(int(pred[4] * 100))
 
     cv2.rectangle(npImg, (x1, y1), (x2, y2), color, 3)
 
@@ -40,13 +38,19 @@ def squarePred(preds, CLASSES, userInput, npImg):
 def revealPred(labels):
   st.text(labels)
 
-if __name__ == '__main__':
-    st.markdown("# VirtuaAI 🧠")
+main, settings = st.tabs(["Main", "Settings"])
+
+with main:
+    main.markdown("# VirtuaAI 🧠")
     st.sidebar.markdown("# Main page 🧠")
 
-    image_file = st.sidebar.file_uploader("Load Images", type=["png","jpg","jpeg"])
+    if 'img_index' not in st.session_state:
+      st.session_state['img_index'] = 0
 
-    if image_file is not None:
+    image_files = st.sidebar.file_uploader("Load Images", type=["png","jpg","jpeg"], accept_multiple_files=True)
+
+    if len(image_files) > st.session_state['img_index']:
+      image_file = image_files[st.session_state['img_index']]
       # To See details
       file_details = {"filename":image_file.name, "filetype":image_file.type,
                       "filesize":image_file.size}
@@ -69,7 +73,7 @@ if __name__ == '__main__':
       labels = list(set([CLASSES[int(preds[i][5])] for i in range(len(preds))]))
       colors = get_colors(CLASSES)
 
-      c = st.container()
+      c = main.container()
 
       userInput = st_tags(label="## Describe the picture :",
         text='Press enter to add more',
@@ -83,23 +87,34 @@ if __name__ == '__main__':
 
       squarePred(preds, CLASSES, userInput, npImg)
     
-      info = st.empty()
+      info = main.empty()
 
       score = round(len(userInput) / len(labels) * 100)
       textScore = 'you have found {}% of the words, there are {} left'.format(score, len(labels) - len(userInput)) if (score != 100) else "🎉 Congratulations, you found everything ! 🎉"
       
-      st.progress(len(userInput) / len(labels))
+      main.progress(len(userInput) / len(labels))
 
       if (score != 100):
         info.warning(textScore)
       else:
         info.success(textScore)
 
-      if st.button("Reveal"):
+      if main.button("Reveal"):
         squarePred(preds, CLASSES, labels, npImg)
         revealPred(labels)
-        
-      st.button(label="Next", on_click=newImage)
+      
+      main.button(label="Next", on_click=newImage)
       
       c.image(npImg)
-      
+
+with settings:
+  settings.markdown("# Settings ⚙️")
+
+  if 'accuracy' not in st.session_state:
+    st.session_state['accuracy'] = True
+
+  if 'suggestion' not in st.session_state:
+    st.session_state['suggestion'] = True
+
+  st.session_state['accuracy'] = settings.checkbox("Accuracy percent visible", st.session_state['accuracy'])
+  st.session_state['suggestion'] = settings.checkbox("Suggestion available", st.session_state['suggestion'])
