@@ -78,13 +78,12 @@ with main:
       userInput = st_tags(label="## Describe the picture :",
         text='Press enter to add more',
         value=[],
-        suggestions=CLASSES,
+        suggestions=(CLASSES if st.session_state['suggestion'] == True else []),
         key='1',
         maxtags=len(labels)
       )
 
       userInput = [x for x in userInput if x in labels]
-
       squarePred(preds, CLASSES, userInput, npImg)
     
       info = main.empty()
